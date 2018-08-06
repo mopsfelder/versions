@@ -1,9 +1,9 @@
 Package:
  sources:
   - git:
-     src: 'https://github.com/open-power-host-os/libvirt.git'
-     branch: 'hostos-release'
-     commit_id: 'bf217de93a7512198f19624eea8ec3feb14b6846'
+     src: 'git://libvirt.org/libvirt.git'
+     branch: 'master'
+     commit_id: '1f8be8ec80309c8901a7b8d41d2507bd4472943e' # v4.6.0
  version:
   file: 'configure.ac'
   regex: 'AC_INIT\(\[[^]]+\],\s*\[([\d.]+)\]'
