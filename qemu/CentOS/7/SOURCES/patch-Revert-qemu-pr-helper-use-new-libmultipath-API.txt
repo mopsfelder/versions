@@ -1,0 +1,74 @@
+From 1fe5eb0c0d34e5891dbca469dde4776312d35caf Mon Sep 17 00:00:00 2001
+From: user <user@localhost.localdomain>
+Date: Wed, 8 Aug 2018 13:07:38 +0000
+Subject: [PATCH] Revert "qemu-pr-helper: use new libmultipath API"
+
+This reverts commit b3f1c8c413bc83e4a2cc7a63e4eddf9fe6449052.
+
+Signed-off-by: user <user@localhost.localdomain>
+---
+ configure             | 12 ++----------
+ scsi/qemu-pr-helper.c | 17 +++--------------
+ 2 files changed, 5 insertions(+), 24 deletions(-)
+
+diff --git a/configure b/configure
+index 2a7796e..e9e5cf0 100755
+--- a/configure
++++ b/configure
+@@ -3563,17 +3563,9 @@ if test "$mpath" != "no" ; then
+ #include <mpath_persist.h>
+ unsigned mpath_mx_alloc_len = 1024;
+ int logsink;
+-static struct config *multipath_conf;
+-extern struct udev *udev;
+-extern struct config *get_multipath_config(void);
+-extern void put_multipath_config(struct config *conf);
+-struct udev *udev;
+-struct config *get_multipath_config(void) { return multipath_conf; }
+-void put_multipath_config(struct config *conf) { }
+-
+ int main(void) {
+-    udev = udev_new();
+-    multipath_conf = mpath_lib_init();
++    struct udev *udev = udev_new();
++    mpath_lib_init(udev);
+     return 0;
+ }
+ EOF
+diff --git a/scsi/qemu-pr-helper.c b/scsi/qemu-pr-helper.c
+index 1528a71..bae3e55 100644
+--- a/scsi/qemu-pr-helper.c
++++ b/scsi/qemu-pr-helper.c
+@@ -282,26 +282,15 @@ static void dm_init(void)
+ 
+ /* Variables required by libmultipath and libmpathpersist.  */
+ QEMU_BUILD_BUG_ON(PR_HELPER_DATA_SIZE > MPATH_MAX_PARAM_LEN);
+-static struct config *multipath_conf;
+ unsigned mpath_mx_alloc_len = PR_HELPER_DATA_SIZE;
+ int logsink;
+-struct udev *udev;
+-
+-extern struct config *get_multipath_config(void);
+-struct config *get_multipath_config(void)
+-{
+-    return multipath_conf;
+-}
+-
+-extern void put_multipath_config(struct config *conf);
+-void put_multipath_config(struct config *conf)
+-{
+-}
+ 
+ static void multipath_pr_init(void)
+ {
++    static struct udev *udev;
++
+     udev = udev_new();
+-    multipath_conf = mpath_lib_init();
++    mpath_lib_init(udev);
+ }
+ 
+ static int is_mpath(int fd)
+-- 
+1.8.3.1
+
