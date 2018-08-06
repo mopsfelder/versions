@@ -2,18 +2,40 @@
 %global shortcommit     %(c=%{commit}; echo ${c:0:7})
 %global gitcommittag    .git%{shortcommit}
 
+
+# Disable debuginfo because it is of no use to us.
+%global debug_package %{nil}
+
+%if 0%{?fedora:1}
+%define cross 1
+%endif
+
 Name:           SLOF
-Version:        20171214
-Release:        2%{?extraver}%{gitcommittag}%{?dist}
+Version:        20180702
+Release:        1%{gitcommittag}%{?dist}
 Summary:        Slimline Open Firmware
 
 License:        BSD
 URL:            http://www.openfirmware.info/SLOF
-BuildArch:      noarch
 
+
+# There are no upstream tarballs.  To prepare a tarball, do:
+#
+# git clone git://github.com/aik/SLOF.git
+# cd SLOF
+# git archive -o ../SLOF-20180702.tar.gz \
+#     --prefix=SLOF-20180702/ qemu-slof-20180702
 Source0:        %{name}.tar.gz
 
-# LTC: building native; no need for xcompiler
+
+%if 0%{?cross:1}
+BuildArch:      noarch
+BuildRequires:  gcc-powerpc64-linux-gnu
+%else
+ExclusiveArch:  ppc64le
+%endif
+
+BuildRequires:  gcc
 BuildRequires:  perl(Data::Dumper)
 
 
@@ -32,25 +54,21 @@ separately.  It is a dependency of qemu-system-ppc64.
 
 %prep
 %setup -q -n %{name}
-
-if test -r "gitlog" ; then
-    echo "This is the first 50 lines of a gitlog taken at archive creation time:"
-    head -50 gitlog
-    echo "End of first 50 lines of gitlog."
-fi
+%autopatch -p1
 
 %build
-export CROSS=""
+%if 0%{?cross:1}
+export CROSS="powerpc64-linux-gnu-"
+%endif
 make qemu %{?_smp_mflags} V=2
 
 
 %install
-mkdir -p $RPM_BUILD_ROOT%{_datadir}/qemu
-cp -a boot_rom.bin $RPM_BUILD_ROOT%{_datadir}/qemu/slof.bin
+mkdir -p %{buildroot}%{_datadir}/qemu
+cp -a boot_rom.bin %{buildroot}%{_datadir}/qemu/slof.bin
 
 
 %files
-%doc FlashingSLOF.pdf
 %doc LICENSE
 %doc README
 %dir %{_datadir}/qemu
@@ -58,93 +76,97 @@ cp -a boot_rom.bin $RPM_BUILD_ROOT%{_datadir}/qemu/slof.bin
 
 
 %changelog
-* Wed Apr 04 2018 OpenPOWER Host OS Builds Bot <open-power-host-os-builds-bot@users.noreply.github.com> - 20171214-2.git
-- Updating to c2a331f broken_sc1: check for H_PRIVILEGE
+* Tue Jul 31 2018 Cole Robinson <crobinso@redhat.com> - 0.1.git20180621-1
+- Update to SLOF 20180621 for qemu-3.0
 
-* Wed Mar 14 2018 OpenPOWER Host OS Builds Bot <open-power-host-os-builds-bot@users.noreply.github.com> - 20171214-1.git
-- Version update
-- Updating to 8128b8e OF: Use new property stdout-path for boot console
+* Thu Jul 19 2018 Richard W.M. Jones <rjones@redhat.com> - 0.1.git20171214-4
+- BR gcc, needed even when cross-compiling to make a build tool.
 
-* Sat Oct 07 2017 OpenPOWER Host OS Builds Bot <open-power-host-os-builds-bot@users.noreply.github.com> - 20170724-2.git
-- Updating to ea31295 Use input-device and output-device
+* Thu Jul 12 2018 Fedora Release Engineering <releng@fedoraproject.org> - 0.1.git20171214-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
 
-* Fri Aug 25 2017 OpenPOWER Host OS Builds Bot <open-power-host-os-builds-bot@users.noreply.github.com> - 20170724-1.git
-- Version update
-- Updating to 685af54 virtio-net: rework the driver to support multiple open
+* Mon Mar 26 2018 Cole Robinson <crobinso@redhat.com> - 0.1.git20171214-2
+- Drop documentation patch
 
-* Mon Aug 14 2017 Olav Philipp Henschel <olavph@linux.vnet.ibm.com> - 20170303-5.git
-- Bump release
+* Thu Mar 22 2018 Cole Robinson <crobinso@redhat.com> - 0.1.git20171214-1
+- Update to SLOF 20171214 for qemu-2.12
 
-* Mon Aug 07 2017 Fabiano Rosas <farosas@linux.vnet.ibm.com> - 20170303-4.git
-- Add extraver macro to Release field
+* Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 0.1.git20170724-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
 
-* Tue Jul 18 2017 Murilo Opsfelder Araújo <muriloo@linux.vnet.ibm.com> - 20170303-3.gitc39657a
-- c39657a5f7d502c132a4ae7f407f8281a2ce68e4 board_qemu: move code out of fdt-fix-node-phandle
-- 4c345ef71ecab658a17020c7780dd5a7d01029bf board_qemu: drop unused values early in fdt-fix-node-phandle
-- ed256fbdc56948f2e8c9fcfda734b0169cec7066 pci: Improve the pci-var-out debug function
-- 089fc18a9b8c38ff83d678f4ea05b270a172848c libhvcall: drop unused KVMPPC_H_REPORT_MC_ERR and KVMPPC_H_NMI_MCE defines
-- 834113a1c67d6fb53dea153c3313d182238f2d36 libnet: Move parse_tftp_args to tftp.c
-- 64215f41aafd182e51947dc5d544e5ebaab744ca libnet: Make the code compilable with -Wformat-security
-- 14df554937c80997c610c6aef9fb89f3449f5ff4 libnet: Move the external declaration of send_ip to ethernet.h
-- bc0dc192899f4462986220172a78a8cf59d22fcc libc: Declare size_t as unsigned long
-- 5d34a1b6c57d5f029e7df1b0d972e7801d315344 libnet/netload: Three more minor clean-ups
-- c633b135c0dd0dc2c59f229c0d74974a5127c187 libnet/tftp: Allow loading to address 0
-- d2d31be1b59ad65c72920428d4624d0fc18fae8e libnet: Refactor some code of netload() into a separate function
-- 140c3f39db4ce4c0c5de352da80307fc72fc8430 libnet: Rework error message printing
-- 2f5f2529958894bcdf2db13a69d3b00765cf0278 libnet: Remove remainders of netsave code
-- db35f1b8a2d3e44f4a12ca926359cc2575e98064 lib/Makefile: Pass FLAG to make in SUBDIRS target
-- 895dbdd0dbd74887c9734b0b1dcc7f2f33a5a669 virtio-net: Fix ugly error message
-- 62674aabe20612a9786fa03e87cf6916ba97a99a pci-phb: Set correct pci-bus-number while walking PCI bridges
-- d5997edcbc1f3a7a75a2c144affeb8cbe8549f02 libnet: Cosmetical clean-up
-- e8f7543db0d83e06b227e12f33492109aea1403c paflof: Print stack warning to stderr, not stdout
-- 8c41240bc4e9f4e3a0b331af18d7305caae024b7 libnet: Allocate ICMPv6 packet space on the heap, not on the stack
-- fa94a3bb20734cb8e0280b232d16b6d466ec3d53 A new SLOF boot menu
-- 1f0600f25d64ced53d69347871c209bde8bb2a3c libc: The arguments of puts() can be marked as "const"
-- 9d5d3b8bd256ac701b0ac0c4059a2b77b6f15912 Increase MAX-ALIAS to 10
-- d258260ee4fd48948bb0c61d22ee96b97c934c5e Use TYPE for the standard output instead of io_putchar()
-- 11ff4ba277ca9a9dc51136bab64772c9ac1541f6 pci: Remove unused next-pci-[mem|mmio|io] functions
-- fcd31d3e672a013d0a02005c053955100c426ff6 pci: Reserve free space at the end of bridge windows instead of at the beginning
-- 38c7e29976d315b354a4d1eaf7e56d942e5422dd pci: Generate a 64-bit range property if necessary
-- 75a42176b7bca4551664be3db47bd23de1425b74 pci: Fix assigned-addresses for 64bit nonprefetchable BAR
-- d90e32c661608d3ba9cbf77d66c6b8efb6219bdc pci-phb: Set pci-max-mem64 to the correct value
-- 06e1e07e5f329dcb2441bc778e13af7825603c62 Rework the printing of the banner during boot
-- 15572e4d646758ad75d69526d096c380fe3aaf2b bootmsg: Fix message for detected kernel
-- 2f1e6a73f2090bcd87eb4185763c744a290c13ad logo: Update the logo
-- 975b31f80aff26addee5d70c34de9cd1b0a204ca pci: Put non-prefetchable 64bit BARs into 32bit MMIO window
-- 0ba3b03ba3fee180bbd76e43434fae42b2759f6f Fix "Unsupported PQ" problems in the scsi-disk open function
+* Wed Nov 22 2017 Paolo Bonzini <pbonzini@redhat.com> - 0.1.git120170724-3
+- Add two patches from RHEL
 
-* Wed Mar 15 2017 OpenPOWER Host OS Builds Bot <open-power-host-os-builds-bot@users.noreply.github.com> - 20170303-2.git1903174
-- 1903174472f8800caf50c959b304501b4c01153c pci: force minimum mem bar alignment
-  of 64K for board-qemu
+* Fri Nov 17 2017 Paolo Bonzini <pbonzini@redhat.com> - 0.1.git120170724-2
+- Disable cross compilation for RHEL
 
-* Wed Mar 08 2017 OpenPOWER Host OS Builds Bot <open-power-host-os-builds-bot@users.noreply.github.com> - 20170303-1.git66d250e
-- Version update
-- 66d250ef0fd06bb88b7399b9563b5008201f2d63 version: update to 20170303
-- ef5286f020d850f47fe196297f673769f6d63198 qemu-bootlist: Take the -boot strict=off setting properly into account
-- 007a175410f919a4368499bd8ef11c32bbf3e01e virtio-scsi: initialize vring avail queue buffers
-- f8ad6d0ae9c2861e2106580d7a2b8f72e95fb29f virtio: Remove global variables in block and 9p driver
+* Thu Aug 03 2017 Cole Robinson <crobinso@redhat.com> - 0.1.git120170724-1
+- Update to SLOF 20170724 for qemu 2.10
 
-* Wed Feb 15 2017 OpenPOWER Host OS Builds Bot <open-power-host-os-builds-bot@users.noreply.github.com> - 20161019-4.gitba46a3f
-- ba46a3f133c8532a517779cc3763e8ac2409d626 Remove superfluous checkpoints in tree.fs
-- a0b96fe66fcd991b407c1d67ca842921e477a6fd Provide write function in the disk-label package
-- 264553932ba3cee4b7472838daaecfaaa61c91da virtio: Implement block write support
-- eee0d12dc541dd345d7931976e352ea5a6494155 scsi: Add SCSI block write support
-- abd21203aa27435e9e5248350dcaf14940de0947 deblocker: Add a write function
-- 9290756ae1195b331373dbcfd3b37d978b3b71f4 virtio-scsi: Fix descriptor order for SCSI WRITE commands
-- 9b8945ecbde65b06ea2ab9e28a6178024b0420fb board-qemu: Add a possibility to use hvterm input instead of USB keyboard
-- 38bf852e73ce6f0ac801dfe8ef1545c4cd0b5ddb Do not try to use virtio-gpu in VGA mode
-- b294381e48ed9c3300e7aea4c4ba7f17729ffd9f virtio: Fix stack comment of virtio-blk-read
-- 7412f9e058132a9218827c23369b8cba33d756af envvar: Do not read default values for /options from the NVRAM anymore
-- 32568e8e1119e3308b3c97d4a290fd5e8a273e11 envvar: Set properties in /options during (set-defaults)
+* Wed Jul 26 2017 Fedora Release Engineering <releng@fedoraproject.org> - 0.1.git20170303-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Mass_Rebuild
 
-* Wed Feb  8 2017 Nikunj A. Dadhania <nikunj@linux.vnet.ibm.com> - 20161019
-- Pull upstream SLOF present in qemu 2.8
+* Wed Mar 15 2017 Cole Robinson <crobinso@redhat.com> - 0.1.git20170303-1
+- Update to SLOF 20170303 for qemu 2.9
 
-* Thu Nov 3 2016 Mauro S. M. Rodrigues <maurosr@linux.vnet.ibm.com> - 20160525-3
-- Spec cleanup
+* Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 0.1.git20161019-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
 
-* Tue Aug 30 2016 Mauro S. M. Rodrigues <maurosr@linux.vnet.ibm.com> - 20160525-2.1
-- Build August, 24th, 2016
+* Sun Dec 04 2016 Cole Robinson <crobinso@redhat.com> 0.1.git20161019-1
+- Update to SLOF 20161019 for qemu 2.8
 
-* Tue Sep 10 2013 baseuser@ibm.com
-- Base-8.x spec file
+* Thu Apr 07 2016 Cole Robinson <crobinso@redhat.com> 0.1.git20160223-1
+- Update to SLOF 20160223 for qemu 2.6
+
+* Wed Feb 03 2016 Fedora Release Engineering <releng@fedoraproject.org> - 0.1.git20151103-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
+* Tue Nov 17 2015 Cole Robinson <crobinso@redhat.com> 0.1.git20151103-1
+- Update to SLOF 20151103 for qemu 2.5
+
+* Tue Jul 14 2015 Cole Robinson <crobinso@redhat.com> 0.1.git20150429-1
+- Update to SLOF 20150429 for qemu 2.4
+
+* Tue Jun 16 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.1.git20150313-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
+* Wed Mar 18 2015 Cole Robinson <crobinso@redhat.com> 0.1.git20150313-1
+- Update to SLOF 20150313 for qemu 2.3
+
+* Tue Dec 02 2014 Cole Robinson <crobinso@redhat.com> - 0.1.git20141202-1
+- Update to SLOF 20141202
+
+* Fri Jul 04 2014 Cole Robinson <crobinso@redhat.com> - 0.1.git20140630-1
+- Update to tag qemu-slof-20140630, queued for qemu 2.1
+
+* Fri Jun 06 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.1.git20140304-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Sun Mar 16 2014 Cole Robinson <crobinso@redhat.com> - 0.1.git20140304-1
+- Update to qemu 2.0 version of SLOF
+
+* Tue Nov 19 2013 Cole Robinson <crobinso@redhat.com> - 0.1.git20130827-1
+- Update to version intended for qemu 1.7
+
+* Fri Aug 02 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.1.git20130430-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Tue May 21 2013 Cole Robinson <crobinso@redhat.com> - 0.1.git20130430-1
+- Update to version shipped with qemu 1.5
+
+* Tue Feb 19 2013 Cole Robinson <crobinso@redhat.com> 0.1.git20121018-1
+- Update to version shipped with qemu 1.4
+
+* Wed Feb 13 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.1.git20120731-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Tue Oct 16 2012 Paolo Bonzini <pbonzini@redhat.com> - 0.1.git20120731-1
+- Move date from release to version.
+
+* Fri Sep 14 2012 Paolo Bonzini <pbonzini@redhat.com> - 0-0.1.git20120731
+- SLOF packages is very out of date with respect to what qemu expects (bug #855246)
+- SLOF package builds wrong version of SLOF (bug #855236)
+- build verbosely
+
+* Tue Jul 31 2012 Richard W.M. Jones <rjones@redhat.com> - 0-0.1.git20120217
+- Initial release in Fedora.
