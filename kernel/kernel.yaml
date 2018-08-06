@@ -1,9 +1,9 @@
 Package:
  sources:
   - git:
-     src: 'https://github.com/open-power-host-os/linux.git'
-     branch: 'hostos-release'
-     commit_id: '5ed4ce3495e00f24c0cd18b453034d866a912968'
+     src: 'git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git'
+     branch: 'master'
+     commit_id: '29dcea88779c856c7dc92040a0c01233263101d4' # v4.17
  version:
   file: 'Makefile'
   regex: 'VERSION.*([\d.]+)\nPATCHLEVEL\s*=\s*(?P<patch>[\d.]*)\nSUBLEVEL\s*=\s*(?(patch)([\d.]*))\nEXTRAVERSION\s*=\s*([-\w.]*)\n'
