@@ -1,6 +1,6 @@
 Name: open-power-host-os
 Version: 3.5
-Release: 22%{dist}
+Release: 23%{dist}
 Summary: OpenPOWER Host OS metapackages
 Group: System Environment/Base
 License: GPLv3
@@ -45,11 +45,11 @@ BuildRequires: policycoreutils-python
 Summary: OpenPOWER Host OS full package set
 
 Requires: %{name}-base = %{version}-%{release}
-Requires(post): kernel = 4.16.0-2%{?extraver}.git5ed4ce3%{dist}
+Requires(post): kernel = 4.17.0-1.git29dcea8%{dist}
 Requires: %{name}-virt = %{version}-%{release}
-Requires(post): SLOF = 20171214-2%{?extraver}.gitc2a331f%{dist}
-Requires(post): libvirt = 4.2.0-2%{?extraver}.gitbf217de%{dist}
-Requires(post): qemu = 15:2.11.91-1%{?extraver}.git46a0689%{dist}
+Requires(post): SLOF = 20180702-1.git9b7ab2f%{dist}
+Requires(post): libvirt = 4.6.0-1.git1f8be8e%{dist}
+Requires(post): qemu = 15:3.0.0-0.1.rc3.gitf750236%{dist}
 
 
 %description all
@@ -62,7 +62,7 @@ Summary: OpenPOWER Host OS basic packages
 
 Requires: %{name}-release = %{version}-%{release}
 
-Requires(post): kernel = 4.16.0-2%{?extraver}.git5ed4ce3%{dist}
+Requires(post): kernel = 4.17.0-1.git29dcea8%{dist}
 
 Obsoletes: open-power-host-os-virt-management < 3.0-7
 
@@ -75,11 +75,11 @@ Obsoletes: open-power-host-os-virt-management < 3.0-7
 Summary: OpenPOWER Host OS hypervisor packages
 
 Requires: %{name}-base = %{version}-%{release}
-Requires(post): kernel = 4.16.0-2%{?extraver}.git5ed4ce3%{dist}
+Requires(post): kernel = 4.17.0-1.git29dcea8%{dist}
 
-Requires(post): SLOF = 20171214-2%{?extraver}.gitc2a331f%{dist}
-Requires(post): libvirt = 4.2.0-2%{?extraver}.gitbf217de%{dist}
-Requires(post): qemu = 15:2.11.91-1%{?extraver}.git46a0689%{dist}
+Requires(post): SLOF = 20180702-1.git9b7ab2f%{dist}
+Requires(post): libvirt = 4.6.0-1.git1f8be8e%{dist}
+Requires(post): qemu = 15:3.0.0-0.1.rc3.gitf750236%{dist}
 
 %description virt
 %{summary}
@@ -143,6 +143,11 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Aug  8 2018 Murilo Opsfelder Araújo <muriloo@linux.ibm.com> - 3.5-23
+- Remove extraver from deps
+- Update deps
+- Bump release
+
 * Thu May 31 2018 OpenPOWER Host OS Builds Bot <open-power-host-os-builds-bot@users.noreply.github.com> - 3.5-22.alpha
 - Update package dependencies
 
